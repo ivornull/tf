@@ -1,0 +1,56 @@
+# ─────────────────────────────────────────────────────────────
+#  VQGAN + GPT Transformer config  —  Dogs vs Cats (one class)
+# ─────────────────────────────────────────────────────────────
+
+data:
+  dataset_path: "D:/Download/train/train"
+  animal: "dog"           # "dog" or "cat" — only this class will be used
+  image_size: 32         # 128×128 → 4× downsampling → 32×32 latent (1024 tokens)
+                          # Use 256 for higher quality (needs more VRAM)
+
+train:
+  batch_size: 16          # lower if OOM; latent 32×32 at 512 image_size is heavy
+  epochs: 1
+  lr: 2.0e-4
+  save_every: 5
+  # GAN settings
+  disc_weight: 0.5        # weight on adversarial loss for generator
+  disc_start: 2000        # global step at which discriminator is activated
+  disc_lr: 2.0e-4
+
+model:
+  in_channels: 3
+  out_channels: 64        # encoder output channels == e_dim
+  hidden_channels: 128
+  residual_blocks: 2
+  n_e: 512                # codebook size
+  e_dim: 64               # codebook / encoder output dimension
+  beta: 0.25              # commitment loss weight
+
+discriminator:
+  base_channels: 64
+  n_layers: 3             # PatchGAN depth
+
+transformer:
+  # seq_len is computed from image_size / 4:  (128/4)^2 = 1024
+  # (set automatically in train.py — no need to change unless you change image_size)
+  n_embd: 64             # embedding dimension
+  n_head: 4               # attention heads  (must divide n_embd)
+  n_layer: 2              # transformer depth  (increase for more capacity)
+  dropout: 0.0
+  lr: 3.0e-4
+  epochs: 1
+  temperature: 1.0        # sampling temperature (inference)
+  top_k: 100              # top-k filtering (inference); null = disabled
+
+log:
+  log_interval: 50
+  log_dir: "./outputs/logs"
+
+# Internal — do not edit manually
+pixelcnn:
+  # kept for backwards compatibility; not used in VQGAN+Transformer pipeline
+  n_layers: 15
+  lr: 1.0e-3
+  input_shape: [32, 32]
+  epochs: 30
